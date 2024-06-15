@@ -1,0 +1,63 @@
+services:
+
+  minio:
+    image: docker.io/bitnami/minio:latest
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    networks:
+      pipeline_network:
+        ipv4_address: 10.5.0.5
+    volumes:
+      - 'minio_data:/data'
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_DEFAULT_BUCKETS=${MINIO_DEFAULT_BUCKETS}
+    env_file:
+      - .env
+
+  nessie:
+    image: ghcr.io/projectnessie/nessie
+    ports:
+      - '19120:19120'
+    networks:
+      pipeline_network:
+        ipv4_address: 10.5.0.3
+
+  dremio:
+    image: dremio/dremio-oss:24.3
+    ports:  
+      - 9047:9047 
+      - 31010:31010 
+      - 45678:45678
+      - 32010:32010
+    volumes:
+      - dremio:/opt/dremio/data
+    networks:
+      pipeline_network:
+        ipv4_address: 10.5.0.4
+
+  metabase:
+    image: metadremio
+    ports:  
+      - 3000:3000
+    environment:
+      - MB_PLUGINS_DIR=/home/plugins
+    networks:
+      pipeline_network:
+        ipv4_address: 10.5.0.2
+
+networks:
+  pipeline_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
+
+volumes:
+  minio_data:
+    driver: local
+  dremio:
+    driver: local
